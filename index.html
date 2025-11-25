@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <title>Logging MC-quiz – gamle eksamener</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050816;
+      --bg-panel: #0b1020;
+      --accent: #f97316;
+      --accent-soft: rgba(249, 115, 22, 0.13);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --border: #1f2933;
+      --error: #ef4444;
+      --success: #22c55e;
+      --radius-xl: 1.25rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #111827 0, #020617 55%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 16px;
+    }
+    .app {
+      max-width: 1100px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.9fr);
+      gap: 20px;
+    }
+    @media (max-width: 840px) {
+      .app { grid-template-columns: minmax(0, 1fr); }
+    }
+    .panel {
+      background: radial-gradient(circle at top left, #111827 0, #020617 55%);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      padding: 18px 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: -60%;
+      background: radial-gradient(circle at top, rgba(249, 115, 22, 0.12), transparent 60%);
+      opacity: 0.9;
+      z-index: -1;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      margin-bottom: 6px;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.8);
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.03em;
+    }
+    .subtitle {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+      margin-bottom: 12px;
+    }
+    .select,
+    .btn {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.88);
+      color: var(--text);
+      font-size: 13px;
+      padding: 7px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.15s ease, transform 0.06s ease,
+        border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .select {
+      padding-right: 26px;
+      position: relative;
+    }
+    .select::after {
+      content: "▾";
+      position: absolute;
+      right: 10px;
+      font-size: 10px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    select {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .btn {
+      border-color: rgba(249, 115, 22, 0.55);
+      background: linear-gradient(
+        135deg,
+        rgba(249, 115, 22, 0.16),
+        rgba(249, 115, 22, 0.03)
+      );
+      box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3),
+        0 12px 25px rgba(15, 23, 42, 0.9);
+    }
+    .btn.secondary {
+      border-color: rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.9);
+    }
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
+    }
+    .chip {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+    .question-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .progress {
+      flex: 1;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(30, 64, 175, 0.7);
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #22c55e);
+      box-shadow: 0 0 14px rgba(249, 115, 22, 0.6);
+      transition: width 0.2s ease;
+    }
+    .question-card {
+      margin-top: 16px;
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top left, #111827 0, #020617 70%);
+      border: 1px solid rgba(31, 41, 55, 0.9);
+    }
+    .question-text {
+      font-size: 15px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .multi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .option {
+      position: relative;
+      border-radius: 999px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 7px 11px 7px 34px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      min-height: 31px;
+      background: rgba(15, 23, 42, 0.92);
+      transition: border-color 0.15s ease, background 0.15s ease,
+        box-shadow 0.15s ease, transform 0.05s ease;
+    }
+    .option:hover {
+      border-color: rgba(148, 163, 184, 0.7);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.7);
+      transform: translateY(-0.5px);
+    }
+    .option input {
+      position: absolute;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .option.correct {
+      border-color: rgba(34, 197, 94, 0.9);
+      background: radial-gradient(
+        circle at left,
+        rgba(34, 197, 94, 0.22),
+        rgba(15, 23, 42, 0.95)
+      );
+    }
+    .option.incorrect.chosen {
+      border-color: rgba(239, 68, 68, 0.9);
+      background: radial-gradient(
+        circle at left,
+        rgba(239, 68, 68, 0.24),
+        rgba(15, 23, 42, 0.97)
+      );
+    }
+    .option.disabled {
+      cursor: default;
+      opacity: 0.92;
+    }
+    .question-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .feedback {
+      margin-top: 10px;
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: rgba(15, 23, 42, 0.96);
+    }
+    .feedback.correct {
+      border-color: rgba(34, 197, 94, 0.9);
+      color: #bbf7d0;
+    }
+    .feedback.incorrect {
+      border-color: rgba(239, 68, 68, 0.9);
+      color: #fecaca;
+    }
+    .side-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .side-stats {
+      font-size: 12px;
+      color: var(--muted);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 5px;
+    }
+    .stat-box {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 14px;
+      padding: 8px 10px;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+    }
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: var(--muted);
+    }
+    .stat-value {
+      font-size: 15px;
+      margin-top: 3px;
+    }
+    .topic-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .pill {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      cursor: pointer;
+      color: var(--muted);
+      transition: background 0.15s ease, border-color 0.15s ease,
+        color 0.15s ease;
+    }
+    .pill.active {
+      background: var(--accent-soft);
+      border-color: rgba(249, 115, 22, 0.8);
+      color: #fed7aa;
+    }
+    .question-list {
+      margin-top: 10px;
+      max-height: 260px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .question-list-item {
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+    }
+    .question-list-item span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .question-list-item small {
+      opacity: 0.7;
+      font-size: 11px;
+    }
+    .question-list-item:hover {
+      background: rgba(15, 23, 42, 0.96);
+      color: var(--text);
+    }
+    .question-list-item.active {
+      background: rgba(249, 115, 22, 0.12);
+      color: #fed7aa;
+    }
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- MAIN QUIZ PANEL -->
+    <section class="panel" id="main-panel">
+      <div class="badge">
+        <div class="badge-dot"></div>
+        LOGGING & PETROPHYSICS – MC QUIZ
+      </div>
+      <h1>Gamle eksamener – multiple choice</h1>
+      <p class="subtitle">
+        Spørsmål og svaralternativer er tatt fra eksamenssett (PDF). Velg tema,
+        svar på spørsmål og sjekk fasit.
+      </p>
+
+      <div class="controls">
+        <div class="select" id="topic-select-wrapper">
+          <span id="topic-select-label">Tema: alle</span>
+          <select id="topic-select"></select>
+        </div>
+
+        <button class="btn secondary" id="btn-random">
+          🔀 Tilfeldig spørsmål
+        </button>
+
+        <button class="btn" id="btn-reset">
+          ♻️ Nullstill progresjon
+        </button>
+      </div>
+
+      <div class="question-meta">
+        <div class="chip">
+          <div class="chip-dot"></div>
+          <span id="meta-topic">Tema: –</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;min-width:120px;">
+          <span id="meta-counter">0 / 0</span>
+          <div class="progress">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <article class="question-card" id="question-card">
+        <div class="multi-label" id="multi-label"></div>
+        <div class="question-text" id="question-text">
+          Velg et tema eller trykk “Tilfeldig spørsmål” for å starte.
+        </div>
+        <div class="options" id="options-container"></div>
+
+        <div class="question-actions">
+          <button class="btn secondary" id="btn-show-answer" disabled>
+            Vis fasit
+          </button>
+          <button class="btn" id="btn-check" disabled>
+            Sjekk svar
+          </button>
+        </div>
+
+        <div class="feedback" id="feedback" style="display:none;"></div>
+      </article>
+    </section>
+
+    <!-- SIDE PANEL -->
+    <aside class="panel">
+      <div class="side-panel-header">
+        <div>
+          <div class="badge" style="margin-bottom:4px;">
+            📚 Oversikt
+          </div>
+          <div class="hint">
+            Klikk på et tema under for å filtrere spørsmålene.
+          </div>
+        </div>
+      </div>
+
+      <div class="side-stats">
+        <div class="stat-box">
+          <div class="stat-label">Poeng</div>
+          <div class="stat-value" id="stat-score">0 / 0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Riktige</div>
+          <div class="stat-value" id="stat-percent">–</div>
+        </div>
+      </div>
+
+      <div class="topic-pills" id="topic-pills"></div>
+
+      <div class="hint">
+        Nederst ser du alle spørsmål i valgt tema. Klikk for å hoppe direkte
+        til et bestemt spørsmål.
+      </div>
+
+      <div class="question-list" id="question-list"></div>
+    </aside>
+  </div>
+
+  <!-- 1) data-fil med ALLE MC-spørsmål -->
+  <script src="questions.js"></script>
+
+  <!-- 2) logikken som bruker QUESTIONS fra questions.js -->
+  <script>
+    // Hvis QUESTIONS ikke finnes (f.eks. glemt å inkludere fil), lag tomt array
+    window.QUESTIONS = window.QUESTIONS || [];
+
+    let filteredQuestions = [...QUESTIONS];
+    let currentIndex = 0;
+    let score = 0;
+    let answeredCount = 0;
+    let currentTopic = "alle";
+    let hasChecked = false;
+
+    const topicSelect = document.getElementById("topic-select");
+    const topicSelectLabel = document.getElementById("topic-select-label");
+    const topicPills = document.getElementById("topic-pills");
+    const questionList = document.getElementById("question-list");
+
+    const metaTopic = document.getElementById("meta-topic");
+    const metaCounter = document.getElementById("meta-counter");
+    const progressFill = document.getElementById("progress-fill");
+
+    const questionTextEl = document.getElementById("question-text");
+    const optionsContainer = document.getElementById("options-container");
+    const feedbackEl = document.getElementById("feedback");
+    const multiLabelEl = document.getElementById("multi-label");
+
+    const btnCheck = document.getElementById("btn-check");
+    const btnShowAnswer = document.getElementById("btn-show-answer");
+    const btnRandom = document.getElementById("btn-random");
+    const btnReset = document.getElementById("btn-reset");
+
+    const statScore = document.getElementById("stat-score");
+    const statPercent = document.getElementById("stat-percent");
+
+    function getTopics() {
+      const set = new Set();
+      QUESTIONS.forEach((q) => set.add(q.topic));
+      return Array.from(set).sort();
+    }
+
+    function populateTopicSelect() {
+      const topics = ["alle", ...getTopics()];
+      topicSelect.innerHTML = "";
+      topics.forEach((topic) => {
+        const opt = document.createElement("option");
+        opt.value = topic;
+        opt.textContent = topic === "alle" ? "Alle tema" : topic;
+        topicSelect.appendChild(opt);
+      });
+    }
+
+    function populateTopicPills() {
+      const topics = ["alle", ...getTopics()];
+      topicPills.innerHTML = "";
+      topics.forEach((topic) => {
+        const pill = document.createElement("button");
+        pill.type = "button";
+        pill.className = "pill" + (topic === currentTopic ? " active" : "");
+        pill.textContent = topic === "alle" ? "Alle" : topic;
+        pill.addEventListener("click", () => {
+          currentTopic = topic;
+          topicSelect.value = topic;
+          topicSelectLabel.textContent =
+            "Tema: " + (topic === "alle" ? "alle" : topic);
+          filterQuestions();
+        });
+        topicPills.appendChild(pill);
+      });
+    }
+
+    function populateQuestionList() {
+      questionList.innerHTML = "";
+      filteredQuestions.forEach((q, idx) => {
+        const item = document.createElement("div");
+        item.className =
+          "question-list-item" + (idx === currentIndex ? " active" : "");
+        const span = document.createElement("span");
+        span.textContent = q.text.replace(/\s+/g, " ").trim();
+        const small = document.createElement("small");
+        small.textContent = q.topic;
+        item.appendChild(span);
+        item.appendChild(small);
+        item.addEventListener("click", () => {
+          currentIndex = idx;
+          renderQuestion();
+          populateQuestionList();
+        });
+        questionList.appendChild(item);
+      });
+    }
+
+    function filterQuestions() {
+      if (currentTopic === "alle") {
+        filteredQuestions = [...QUESTIONS];
+      } else {
+        filteredQuestions = QUESTIONS.filter((q) => q.topic === currentTopic);
+      }
+      currentIndex = 0;
+      renderQuestion();
+      populateTopicPills();
+      populateQuestionList();
+    }
+
+    function renderQuestion() {
+      feedbackEl.style.display = "none";
+      feedbackEl.textContent = "";
+      hasChecked = false;
+
+      if (filteredQuestions.length === 0) {
+        questionTextEl.textContent =
+          "Ingen spørsmål i dette temaet ennå. Legg til flere spørsmål i questions.js.";
+        optionsContainer.innerHTML = "";
+        btnCheck.disabled = true;
+        btnShowAnswer.disabled = true;
+        metaCounter.textContent = "0 / 0";
+        metaTopic.textContent = "Tema: –";
+        progressFill.style.width = "0%";
+        return;
+      }
+
+      const q = filteredQuestions[currentIndex];
+
+      questionTextEl.textContent = q.text;
+      metaTopic.textContent = "Tema: " + q.topic;
+      metaCounter.textContent = (currentIndex + 1) + " / " + filteredQuestions.length;
+      progressFill.style.width =
+        ((currentIndex + 1) / Math.max(1, filteredQuestions.length)) * 100 + "%";
+
+      const numCorrect = q.options.filter((o) => o.correct).length;
+      if (numCorrect > 1) {
+        multiLabelEl.textContent = "Flere riktige alternativer – huk av alle som gjelder";
+      } else {
+        multiLabelEl.textContent = "";
+      }
+
+      optionsContainer.innerHTML = "";
+      const inputType = numCorrect > 1 ? "checkbox" : "radio";
+
+      q.options.forEach((opt, idx) => {
+        const label = document.createElement("label");
+        label.className = "option";
+        const input = document.createElement("input");
+        input.type = inputType;
+        input.name = "option";
+        input.value = idx;
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(opt.text));
+        optionsContainer.appendChild(label);
+      });
+
+      btnCheck.disabled = false;
+      btnShowAnswer.disabled = false;
+    }
+
+    function getSelectedIndices() {
+      const inputs = optionsContainer.querySelectorAll("input");
+      const indices = [];
+      inputs.forEach((input, idx) => {
+        if (input.checked) indices.push(idx);
+      });
+      return indices;
+    }
+
+    function arraysEqual(a, b) {
+      if (a.length !== b.length) return false;
+      const s1 = [...a].sort();
+      const s2 = [...b].sort();
+      return s1.every((v, i) => v === s2[i]);
+    }
+
+    function checkAnswer(showOnly = false) {
+      const q = filteredQuestions[currentIndex];
+      const correctIndices = q.options
+        .map((o, idx) => (o.correct ? idx : -1))
+        .filter((idx) => idx !== -1);
+
+      const selected = getSelectedIndices();
+      const optionEls = optionsContainer.querySelectorAll(".option");
+
+      optionEls.forEach((el, idx) => {
+        el.classList.remove("correct", "incorrect", "chosen", "disabled");
+      });
+
+      // Vis fasit grafisk
+      correctIndices.forEach((idx) => {
+        optionEls[idx].classList.add("correct");
+      });
+
+      if (showOnly) {
+        feedbackEl.style.display = "block";
+        feedbackEl.className = "feedback";
+        feedbackEl.textContent =
+          "Fasit vist. Grønne alternativer er riktige.";
+        if (q.explanation) feedbackEl.textContent += " " + q.explanation;
+        optionEls.forEach((el) => el.classList.add("disabled"));
+        optionsContainer
+          .querySelectorAll("input")
+          .forEach((i) => (i.disabled = true));
+        return;
+      }
+
+      if (selected.length === 0) {
+        feedbackEl.style.display = "block";
+        feedbackEl.className = "feedback incorrect";
+        feedbackEl.textContent = "Velg minst ett alternativ før du sjekker.";
+        return;
+      }
+
+      selected.forEach((idx) => {
+        if (!correctIndices.includes(idx)) {
+          optionEls[idx].classList.add("incorrect", "chosen");
+        }
+      });
+
+      const isCorrect = arraysEqual(selected, correctIndices);
+      feedbackEl.style.display = "block";
+      feedbackEl.className = "feedback " + (isCorrect ? "correct" : "incorrect");
+      feedbackEl.textContent = isCorrect
+        ? "Riktig! 🎉"
+        : "Ikke helt riktig. Se de grønne alternativene.";
+      if (q.explanation) feedbackEl.textContent += " " + q.explanation;
+
+      if (!hasChecked) {
+        answeredCount += 1;
+        if (isCorrect) score += 1;
+        updateStats();
+        hasChecked = true;
+      }
+
+      optionsContainer
+        .querySelectorAll("input")
+        .forEach((i) => (i.disabled = true));
+      optionEls.forEach((el) => el.classList.add("disabled"));
+    }
+
+    function updateStats() {
+      statScore.textContent = score + " / " + answeredCount;
+      if (answeredCount === 0) {
+        statPercent.textContent = "–";
+      } else {
+        const pct = Math.round((score / answeredCount) * 100);
+        statPercent.textContent = pct + " %";
+      }
+    }
+
+    topicSelect.addEventListener("change", () => {
+      currentTopic = topicSelect.value;
+      topicSelectLabel.textContent =
+        "Tema: " + (currentTopic === "alle" ? "alle" : currentTopic);
+      filterQuestions();
+    });
+
+    btnRandom.addEventListener("click", () => {
+      if (filteredQuestions.length === 0) return;
+      const idx = Math.floor(Math.random() * filteredQuestions.length);
+      currentIndex = idx;
+      renderQuestion();
+      populateQuestionList();
+    });
+
+    btnReset.addEventListener("click", () => {
+      score = 0;
+      answeredCount = 0;
+      updateStats();
+      filterQuestions();
+    });
+
+    btnCheck.addEventListener("click", () => checkAnswer(false));
+    btnShowAnswer.addEventListener("click", () => checkAnswer(true));
+
+    function init() {
+      populateTopicSelect();
+      populateTopicPills();
+      filterQuestions();
+      updateStats();
+    }
+
+    init();
+  </script>
+</body>
+</html>
