@@ -1,4 +1,6 @@
-export const questions = [
+// questions.js
+// Rå-spørsmålene dine slik du skrev dem:
+const RAW_QUESTIONS = [
   // --------- EXAM BLOCK 1 (OIP / CORE / WASHOUT / NMR / SP / RESISTIVITY etc.) ----------
 
   {
@@ -31,8 +33,6 @@ export const questions = [
       "Mud cake build-up",
       "Spontaneous Potential (SP)"
     ],
-    // Grain-scale core plug: porosity and permeability; here core plug analysis typically gives porosity and permeability
-    // In denne oppgaven er de som er markert i fasit: NMR total porosity (lab), mud cake build-up (no), SP (no).
     // Fra fasit i PDF: X ved NMR total porosity, Density-Neutron crossplot, Spontaneous Potential - SP.
     correctAnswers: [2, 3, 5],
     multi: true
@@ -249,7 +249,6 @@ export const questions = [
       "Chlorine slows down high energy neutrons",
       "Chlorine reduces the epithermal neutron population"
     ],
-    // Cl gir ekstra absorpsjon av lavenergi-termiske nøytroner
     correctAnswers: [0],
     multi: false
   },
@@ -280,7 +279,6 @@ export const questions = [
       "Low Rt, Rt > Rxo",
       "Low Rt, Rw > Rmf"
     ],
-    // Laterolog: ledende gjørme, høy Rt, Rt > Rxo
     correctAnswers: [2],
     multi: false
   },
@@ -295,7 +293,6 @@ export const questions = [
       "Low Rt, Rt > Rxo",
       "Low Rt, Rw > Rmf"
     ],
-    // Induction: ikke-ledende gjørme, lav Rt, Rt > Rxo (dypere)
     correctAnswers: [3],
     multi: false
   },
@@ -310,7 +307,6 @@ export const questions = [
       "39 000 ppm",
       "14 000 ppm"
     ],
-    // fasit fra figuren: 46 000 ppm
     correctAnswers: [1],
     multi: false
   },
@@ -370,7 +366,7 @@ export const questions = [
       "Hydrocarbon saturation",
       "Lithology"
     ],
-    // typisk fra cuttings: lithology, hydrocarbon shows, sometimes mineralogy; i fasit: Lithology, Hydrocarbon presence, maybe water saturation
+    // typisk fra cuttings: lithology, hydrocarbon shows
     correctAnswers: [4, 5],
     multi: true
   },
@@ -427,7 +423,6 @@ export const questions = [
       "Litho-Density tool",
       "Natural Spectral Gamma Ray tool"
     ],
-    // bruker kunstig/indusert gammastråling: Litho-density + Induced Gamma Spectroscopy
     correctAnswers: [2, 4],
     multi: true
   },
@@ -443,7 +438,6 @@ export const questions = [
       "Litho-Density tool",
       "Natural Spectral Gamma Ray tool"
     ],
-    // klassisk: Neutron porosity tool
     correctAnswers: [0],
     multi: false
   },
@@ -503,7 +497,6 @@ export const questions = [
       "Laterolog resistivity",
       "Nuclear Magnetic Resonance"
     ],
-    // SP + NMR fungerer dårlig i OBM
     correctAnswers: [0, 4],
     multi: true
   },
@@ -519,7 +512,7 @@ export const questions = [
       "100 000 ppm",
       "120 000 ppm"
     ],
-    correctAnswers: [2], // 30 000 ppm
+    correctAnswers: [2],
     multi: false
   },
 
@@ -534,13 +527,14 @@ export const questions = [
       "0.123 ohm-m",
       "0.200 ohm-m"
     ],
-    correctAnswers: [2], // 0.080 ohm-m
+    correctAnswers: [2],
     multi: false
   },
 
   {
     id: "Q12c_KCl_vs_NaCl",
-    text: "A set of logs is acquired with a Potassium Chloride water based mud (WBM) in the hole. The mud system is then changed to a Sodium Chloride WBM of similar mud weight. The well is then re-logged. Which of the following log curves are likely to show significant differences between the two logging runs:",
+    text: "A set of logs is acquired with a Potassium Chloride water based mud (WBM) in the hole. The mud system is then changed to a Sodium Chloride WBM of similar mud weight. The well is then re-logged. Which of the following log curves are
+ likely to show significant differences between the two logging runs:",
     options: [
       "Compressional sonic",
       "Density",
@@ -549,7 +543,6 @@ export const questions = [
       "Photoelectric factor (PEF)",
       "Uranium"
     ],
-    // GR (K vs Na) + PEF litt, og også Uranium kan endres; i fasit markert GR
     correctAnswers: [3],
     multi: false
   },
@@ -565,7 +558,6 @@ export const questions = [
       "Neutron porosity",
       "Bulk density"
     ],
-    // fasit: Sonic og neutron porosity
     correctAnswers: [0, 4],
     multi: true
   },
@@ -580,7 +572,6 @@ export const questions = [
       "Higher NMR permeability",
       "Increased neutron porosity"
     ],
-    // Shale + water: higher GR, decreased Rt, increased neutron porosity
     correctAnswers: [1, 2, 4],
     multi: true
   },
@@ -595,7 +586,6 @@ export const questions = [
       "Higher NMR permeability",
       "Increased neutron porosity"
     ],
-    // typisk: increased Rt, higher GR, increased neutron porosity
     correctAnswers: [0, 1, 4],
     multi: true
   },
@@ -623,7 +613,6 @@ export const questions = [
       "Oil-wet formation",
       "Insufficient polarization time (Wait Time)"
     ],
-    // Gas in formation, too short TE, insufficient wait time
     correctAnswers: [1, 2, 5],
     multi: true
   },
@@ -638,7 +627,6 @@ export const questions = [
       "Zone D",
       "Zone E"
     ],
-    // fasit: Zones B, C, E
     correctAnswers: [1, 2, 4],
     multi: true
   },
@@ -667,3 +655,18 @@ export const questions = [
     multi: false
   }
 ];
+
+
+// 🚀 Konverter til formatet som index.html forventer
+window.QUESTIONS = RAW_QUESTIONS.map((q) => ({
+  id: q.id,
+  topic: "Eksamen",              // samme tema på alle – enkelt og greit
+  text: q.text,
+  options: q.options.map((optText, idx) => ({
+    text: optText,
+    correct: Array.isArray(q.correctAnswers)
+      ? q.correctAnswers.includes(idx)
+      : false
+  })),
+  explanation: q.explanation || ""
+}));
